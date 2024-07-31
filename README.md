@@ -1,313 +1,391 @@
-# Containerlab multi-area OSPF configuration Nokia SRLinux in Windows WSL Ubuntu-22.04
+# Containerlab Multi-Area OSPF Configuration on Nokia SR Linux in Windows WSL Ubuntu 22.04
 
->Install WSL feature on Control Panel
-	check:	Windows Subsystem Linux
-	Restart PC
->Powershell (run as user)
-	wsl --update
->Powershell Install Ubuntu 22.04 LTS
-	wsl --install Ubuntu-22.04
-	set username & password
-	sudo apt-get update && upgrade
->Install docker on Ubuntu-22.04 LTS
-	https://docs.docker.com/engine/install/ubuntu/?ref=crapts.org	
-===============================================================
->cek docker status
-	sudo service docker status
->test docker
-	sudo docker run hello-world
->Install containerlab
-	curl -sL https://containerlab.dev/setup | sudo bash -s "all"
->cek container lab status
-	containerlab version
->install nokia srlinux (with sudo) 874.7mb
-	docker pull ghcr.io/nokia/srlinux
->show images
-	docker images
->check container name (empty)
-	docker ps -a
+step-by-step instructions for setting up and configuring a multi-area OSPF network using Nokia SR Linux on Containerlab in a Windows WSL Ubuntu 22.04 environment.
 
-------------------------------------------------------------------------------------
->copy lab folder from /home/username/clab-nokia-lab
-	cp -r clab-nokia-lab clab-nokia-lab2
-	cd clab-nokia-lab2/
-//you can directly create topofile .yml or create new directory for it, i copied existing example lab directory from containerlab and make my topofile file inside
+## Prerequisites
 
->make topology file
-	vi nokia-lab.clab.yml
-		name: nokia-lab
-		topology:
-		nodes:
-			srl1:
-			kind: srl
-			image: ghcr.io/nokia/srlinux
-			srl2:
-			kind: srl
-			image: ghcr.io/nokia/srlinux
-			srl3:
-			kind: srl
-			image: ghcr.io/nokia/srlinux
-		links:
-			- endpoints: ["srl1:e1-1", "srl2:e1-1"]
-			- endpoints: ["srl1:e1-2", "srl3:e1-1"]
+### Install WSL Feature on Windows
 
->verify topology file
-	cat nokia-lab-clab.yml
-	
->deploy
-	sudo containerlab deploy <topofile>
-	//if you need privilage add sudo 
-	
->check docker container to verify
-	docker ps -a
-	
->generate topology
-	sudo containerlab graph --topo <topofile>
-	http://0.0.0.0:50080
-	ifconfig => eth0
-	change 0.0.0.0 with eth0 IP
+1. Open Control Panel.
+2. Enable the **Windows Subsystem for Linux** feature.
+3. Restart your PC.
 
-.....................................................................................
->copy lab folder from /home/username/clab-nokia-lab
-	cp -r clab-nokia-lab clab-nokia-lab2
-	cd clab-nokia-lab2/
-//you can directly create topofile .yml or create new directory for it, i copied existing example lab directory from containerlab and make my topofile file inside
+### Install Ubuntu 22.04 LTS
 
->make topology file
-	vi nokia-lab.clab.yml
-		name: nokia-lab
-		topology:
-		nodes:
-			srl1:
-			kind: srl
-			image: ghcr.io/nokia/srlinux
-			srl2:
-			kind: srl
-			image: ghcr.io/nokia/srlinux
-			srl3:
-			kind: srl
-			image: ghcr.io/nokia/srlinux
-		links:
-			- endpoints: ["srl1:e1-1", "srl2:e1-1"]
-			- endpoints: ["srl1:e1-2", "srl3:e1-1"]
+1. Open PowerShell (run as user) and update WSL:
+    ```powershell
+    wsl --update
+    ```
 
->verify topology file
-	cat nokia-lab-clab.yml
-	
->deploy
-	sudo containerlab deploy <topofile>
-	//if you need privilage add sudo 
-	
->check docker container to verify
-	docker ps -a
-	
->generate topology
-	sudo containerlab graph --topo <topofile>
-	http://0.0.0.0:50080
-	ifconfig => eth0
-	change 0.0.0.0 with eth0 IP
+2. Install Ubuntu 22.04 LTS:
+    ```powershell
+    wsl --install Ubuntu-22.04
+    ```
+3. Set your username and password.
+4. Update and upgrade the system:
+    ```bash
+    sudo apt-get update && sudo apt-get upgrade
+    ```
 
-.....................................................................................
-//Configuration Topology: 3 Routers; 2 area: Normal and Stub; broadcast.
-R01 as ABR between R02 in normal area and R03 in stub
+### Install Docker on Ubuntu 22.04 LTS
 
->system interface IP address ipv4
-	#R01> 1.1.1.1/32
-	#R02> 2.2.2.2/32
-	#R03> 3.3.3.3/32
+Follow the [Docker installation guide for Ubuntu](https://docs.docker.com/engine/install/ubuntu/?ref=crapts.org).
 
->link interface IP addr IPv4
-	#R01
-		e1-1
-			name: to_R02
-			addr: 10.4.5.1/30
-		e1-2
-			name: to_R03
-			addr: 10.2.4.1/30
-	#R02
-		e1-1
-			name: to_R01
-			addr: 10.4.5.2/30
-	#R03
-		e1-1
-			name: to_R01
-			addr: 10.2.4.2/30
+### Check Docker Status
 
->OSPF areaID
-	Area 0.0.0.0
-		link R01 to R02
-		type: normal
+1. Check Docker status:
+    ```bash
+    sudo service docker status
+    ```
+2. Test Docker installation:
+    ```bash
+    sudo docker run hello-world
+    ```
 
-	Area 0.0.0.1
-		link R01 to R03
-		type: stub
+### Install Containerlab
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->login to srl1
-	ssh admin@clab-nokia-lab-srl1
-	password= NokiaSrl1!
-	//or you can login with docker exec command
-	docker exec -it clab-nokia-lab-srl1 sr_cli
-	
-	info flat
-	//make sure Port mgmt0, ethernet and system; Admin up and Oper up before configuring IP, and next step after configuring IP succesful by ping to peer link we could continue config IGP routing
+1. Install Containerlab:
+    ```bash
+    curl -sL https://containerlab.dev/setup | sudo bash -s "all"
+    ```
+2. Check Containerlab status:
+    ```bash
+    containerlab version
+    ```
 
->config on R01
-#R01> enter configuration candidate mode
-	enter candidate
+### Install Nokia SR Linux
 
-#R01> set hostnname R01
-	set system name host-name R01
-	commit stay
-	save
+1. Pull the Nokia SR Linux image:
+    ```bash
+    sudo docker pull ghcr.io/nokia/srlinux
+    ```
+2. Verify the Docker image:
+    ```bash
+    docker images
+    ```
 
-#R01> set system interface
-	set / interface system0
-		/ interface system0 description "System Loopback"
-							admin-state enable
-							subinterface 0 
-							ipv4 address 1.1.1.1/32
-	info
+## Setting Up the Lab
 
-	> verification
-	/
-	show interface system0
-	info network-instance default interface system0.0
-	
-	//SR Linux does not support assigning an IPv4 address directly to a physical Ethernet interface  like ethernet-1/1. the ipv4 will be assigned as subinterface: ethernet-1/1.1
-	
-#R01> set interface 1/1 for R02
-	/ interface ethernet-1/1
-							 description "to_R02"
-							 admin-state enable
-							 mtu 1500
-							 subinterface 1
-								admin-state enable
-								ipv4 address 10.4.5.1/30
-	info
+### Prepare the Lab Directory
 
-#R01> set interface 1/2 for R03
-	/ interface ethernet-1/2
-							 description "to_R03"
-							 admin-state enable
-							 mtu 1500
-							 subinterface 1
-								admin-state enable
-								ipv4 address 10.2.4.1/30
-	info
-	/
-	show interface all
-	
-	show interface brief	
-	show interface ethernet-1/1 detail
-	????????????????????? down 
+1. Copy the example lab directory:
+    ```bash
+    cp -r clab-nokia-lab clab-nokia-lab2
+    cd clab-nokia-lab2
+    ```
 
-#R01> set routing protocol OSPF on interface 1/1
-	set / network-instance default protocols ospf instance link_to_R02
-		/ network-instance default protocols ospf admin-state enable
-												  router-id 1.1.1.1
-												  area 0.0.0.0
-												  interface ethernet-1/1
-												  interface-type broadcast
-												  admin-state enable
-	
-#R01> set routing protocol OSPF on interface 1/1
-	set / network-instance default protocols ospf instance link_to_R03
-		/ network-instance default protocols ospf admin-state enable
-												  router-id 1.1.1.1
-												  area 0.0.0.1
-												  interface ethernet-1/2
-												  interface-type broadcast
-												  admin-state enable
-	
-#R01> config verification
-	validate
-	commit stay
-	save
-------------------------------------------------
-#R02> enter configuration candidate
-	enter candidate
+### Create the Topology File
 
-#R02> set hostname R02
-	set system name host-name R02
+1. Create the topology file `nokia-lab.clab.yml`:
+    ```bash
+    vi nokia-lab.clab.yml
+    ```
 
-#R02> set system interface
-	set / interface system0
-		/ interface system0 description "System Loopback"
-							admin-state enable
-							subinterface 0 
-							ipv4 address 2.2.2.2/32
-	info
+2. Add the following content:
+    ```yaml
+    name: nokia-lab
+    topology:
+      nodes:
+        srl1:
+          kind: srl
+          image: ghcr.io/nokia/srlinux
+        srl2:
+          kind: srl
+          image: ghcr.io/nokia/srlinux
+        srl3:
+          kind: srl
+          image: ghcr.io/nokia/srlinux
+      links:
+        - endpoints: ["srl1:e1-1", "srl2:e1-1"]
+        - endpoints: ["srl1:e1-2", "srl3:e1-1"]
+    ```
 
-#R02> set interface 1/1 for R01
-	/ interface ethernet-1/1
-							 description "to_R01"
-							 admin-state enable
-							 mtu 1500
-							 subinterface 1
-								admin-state enable
-								ipv4 address 10.4.5.2/30
-	show interface system0.0
-	show interface ethernet-1/1.1
+3. Verify the topology file:
+    ```bash
+    cat nokia-lab.clab.yml
+    ```
 
-#R02> set routing protocol OSPF on interface 1/1
-	set / network-instance default protocols ospf instance link_to_R01
-		/ network-instance default protocols ospf admin-state enable
-												  router-id 2.2.2.2
-												  area 0.0.0.0
-												  interface ethernet-1/1
-												  interface-type broadcast
-												  admin-state enable
+### Deploy the Topology
 
-#R02> config verification
-	validate
-	commit stay
-	save
-------------------------------------------------
-#R03> enter configuration candidate
-	enter candidate
+1. Deploy the topology:
+    ```bash
+    sudo containerlab deploy --topo nokia-lab.clab.yml
+    ```
 
-#R03> set hostname R03
-	set system name host-name R03
+2. Check Docker containers:
+    ```bash
+    docker ps -a
+    ```
 
-#R03> set system interface
-	set / interface system0
-		/ interface system0 description "System Loopback"
-							admin-state enable
-							subinterface 0 
-							ipv4 address 3.3.3.3/32
-	info
+3. Generate the topology graph:
+    ```bash
+    sudo containerlab graph --topo nokia-lab.clab.yml
+    ```
 
-#R03> set interface 1/1 for R01
-	/ interface ethernet-1/1
-							 description "to_R01"
-							 admin-state enable
-							 mtu 1500
-							 subinterface 1
-								admin-state enable
-								ipv4 address 10.2.4.2/30
-	show interface all
-	
-#R03> set routing protocol OSPF on interface 1/1
-set routing protocol OSPF on interface 1/1
-	set / network-instance default protocols ospf instance link_to_R01
-		/ network-instance default protocols ospf admin-state enable
-												  router-id 3.3.3.3
-												  area 0.0.0.1
-												  interface ethernet-1/1
-												  interface-type broadcast
-												  admin-state enable
-												  
-#R03> config verification
-	validate
-	commit stay
-	save
-================================================
->verification
-	show network-instance default/protocols/ospf
-	ping 
-	info ospf
-	show network-instance default protocols ospf interface
-	show network-instance default protocols ospf neighbor
-	show network-instance default routes
+4. Access the topology graph:
+    Open a web browser and go to `http://<eth0-IP>:50080` (replace `<eth0-IP>` with the IP address of `eth0`).
 
+## Configuration Topology: 3 Routers; 2 Areas: Normal and Stub; Broadcast
+
+- **R01** as ABR between **R02** in normal area and **R03** in stub.
+
+### System Interface IP Address (IPv4)
+
+- R01: 1.1.1.1/32
+- R02: 2.2.2.2/32
+- R03: 3.3.3.3/32
+
+### Link Interface IP Address (IPv4)
+
+- **R01**
+  - e1-1: to_R02 (10.4.5.1/30)
+  - e1-2: to_R03 (10.2.4.1/30)
+
+- **R02**
+  - e1-1: to_R01 (10.4.5.2/30)
+
+- **R03**
+  - e1-1: to_R01 (10.2.4.2/30)
+
+### OSPF Area ID
+
+- **Area 0.0.0.0**
+  - Link R01 to R02
+  - Type: Normal
+
+- **Area 0.0.0.1**
+  - Link R01 to R03
+  - Type: Stub
+
+## Configuration Steps
+
+### Login to SRL1
+
+1. SSH into SRL1:
+    ```bash
+    ssh admin@clab-nokia-lab-srl1
+    ```
+   Password: `NokiaSrl1!`
+
+2. Alternatively, login using Docker:
+    ```bash
+    docker exec -it clab-nokia-lab-srl1 sr_cli
+    ```
+
+3. Ensure ports `mgmt0`, `ethernet`, and `system` are Admin UP and Oper UP.
+
+### Configure R01
+
+1. Enter configuration candidate mode:
+    ```plaintext
+    enter candidate
+    ```
+
+2. Set hostname:
+    ```plaintext
+    set system name host-name R01
+    commit stay
+    save
+    ```
+
+3. Configure system interface:
+    ```plaintext
+    set / interface system0
+        / interface system0 description "System Loopback"
+                            admin-state enable
+                            subinterface 0 
+                            ipv4 address 1.1.1.1/32
+    info
+    ```
+
+4. Configure interface 1/1 for R02:
+    ```plaintext
+    / interface ethernet-1/1
+                            description "to_R02"
+                            admin-state enable
+                            mtu 1500
+                            subinterface 1
+                            admin-state enable
+                            ipv4 address 10.4.5.1/30
+    info
+    ```
+
+5. Configure interface 1/2 for R03:
+    ```plaintext
+    / interface ethernet-1/2
+                            description "to_R03"
+                            admin-state enable
+                            mtu 1500
+                            subinterface 1
+                            admin-state enable
+                            ipv4 address 10.2.4.1/30
+    info
+    ```
+
+6. Verify interfaces:
+    ```plaintext
+    show interface all
+    show interface brief
+    show interface ethernet-1/1 detail
+    ```
+
+7. Set OSPF on interface 1/1:
+    ```plaintext
+    set / network-instance default protocols ospf instance link_to_R02
+        / network-instance default protocols ospf admin-state enable
+                                                  router-id 1.1.1.1
+                                                  area 0.0.0.0
+                                                  interface ethernet-1/1
+                                                  interface-type broadcast
+                                                  admin-state enable
+    ```
+
+8. Set OSPF on interface 1/2:
+    ```plaintext
+    set / network-instance default protocols ospf instance link_to_R03
+        / network-instance default protocols ospf admin-state enable
+                                                  router-id 1.1.1.1
+                                                  area 0.0.0.1
+                                                  interface ethernet-1/2
+                                                  interface-type broadcast
+                                                  admin-state enable
+    ```
+
+9. Verify configuration:
+    ```plaintext
+    validate
+    commit stay
+    save
+    ```
+
+### Configure R02
+
+1. Enter configuration candidate mode:
+    ```plaintext
+    enter candidate
+    ```
+
+2. Set hostname:
+    ```plaintext
+    set system name host-name R02
+    ```
+
+3. Configure system interface:
+    ```plaintext
+    set / interface system0
+        / interface system0 description "System Loopback"
+                            admin-state enable
+                            subinterface 0 
+                            ipv4 address 2.2.2.2/32
+    info
+    ```
+
+4. Configure interface 1/1 for R01:
+    ```plaintext
+    / interface ethernet-1/1
+                            description "to_R01"
+                            admin-state enable
+                            mtu 1500
+                            subinterface 1
+                            admin-state enable
+                            ipv4 address 10.4.5.2/30
+    show interface system0.0
+    show interface ethernet-1/1.1
+    ```
+
+5. Set OSPF on interface 1/1:
+    ```plaintext
+    set / network-instance default protocols ospf instance link_to_R01
+        / network-instance default protocols ospf admin-state enable
+                                                  router-id 2.2.2.2
+                                                  area 0.0.0.0
+                                                  interface ethernet-1/1
+                                                  interface-type broadcast
+                                                  admin-state enable
+    ```
+
+6. Verify configuration:
+    ```plaintext
+    validate
+    commit stay
+    save
+    ```
+
+### Configure R03
+
+1. Enter configuration candidate mode:
+    ```plaintext
+    enter candidate
+    ```
+
+2. Set hostname:
+    ```plaintext
+    set system name host-name R03
+    ```
+
+3. Configure system interface:
+    ```plaintext
+    set / interface system0
+        / interface system0 description "System Loopback"
+                            admin-state enable
+                            subinterface 0 
+                            ipv4 address 3.3.3.3/32
+    info
+    ```
+
+4. Configure interface 1/1 for R01:
+    ```plaintext
+    / interface ethernet-1/1
+                            description "to_R01"
+                            admin-state enable
+                            mtu 1500
+                            subinterface 1
+                            admin-state enable
+                            ipv4 address 10.2.4.2/30
+    show interface all
+    ```
+
+5. Set OSPF on interface 1/1:
+    ```plaintext
+    set / network-instance default protocols ospf instance link_to_R01
+        / network-instance default protocols ospf admin-state enable
+                                                  router-id 3.3.3.3
+                                                  area 0.0.0.1
+                                                  interface ethernet-1/1
+                                                  interface-type broadcast
+                                                  admin-state enable
+    ```
+
+6. Verify configuration:
+    ```plaintext
+    validate
+    commit stay
+    save
+    ```
+
+## Verification
+
+1. Show OSPF configuration:
+    ```plaintext
+    show network-instance default protocols ospf
+    ```
+
+2. Verify connectivity:
+    ```plaintext
+    ping <destination-IP>
+    ```
+
+3. Show OSPF interfaces:
+    ```plaintext
+    show network-instance default protocols ospf interface
+    ```
+
+4. Show OSPF neighbors:
+    ```plaintext
+    show network-instance default protocols ospf neighbor
+    ```
+
+5. Show routes:
+    ```plaintext
+    show network-instance default routes
+    ```
