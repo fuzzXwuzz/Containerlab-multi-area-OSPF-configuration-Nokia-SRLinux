@@ -23,7 +23,8 @@
    ```sh
    wsl -v
    ```
-   Ensure it shows WSL2.
+   Ensure it shows WSL2 logo on the Windows app start menu
+
 5. **Update WSL**:
    ```sh
    wsl --update
