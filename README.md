@@ -23,7 +23,7 @@
    ```sh
    wsl -v
    ```
-   Ensure it shows WSL2 logo on the Windows app start menu
+   Ensure it shows WSL logo on the Windows app start menu
 
 5. **Update WSL**:
    ```sh
@@ -35,29 +35,30 @@
    wsl --install -d Ubuntu-22.04
    ```
    Enter your username and password.
-7. **Verify WSL app logo** appears in the start menu.
-8. **Update and upgrade Ubuntu**:
+   
+8. **Verify WSL app logo** appears in the start menu.
+9. **Update and upgrade Ubuntu**:
    ```sh
    sudo apt update && sudo apt full-upgrade -y
    ```
-9. **Install Docker in WSL** following [Docker's official guide](https://docs.docker.com/engine/install/ubuntu/).
-10. **Check Docker service status**:
+10. **Install Docker in WSL** following [Docker's official guide](https://docs.docker.com/engine/install/ubuntu/).
+11. **Check Docker service status**:
     ```sh
     sudo service docker status
     ```
     Ensure it is 'ON'.
-11. **Install Docker Desktop on Windows** and integrate with WSL2 in settings > resources. Ensure Ubuntu-22.04 is checked.
-12. **Verify Docker integration**:
+12. **Install Docker Desktop on Windows** and integrate with WSL2 in settings > resources. Ensure Ubuntu-22.04 is checked.
+13. **Verify Docker integration**:
     ```sh
     wsl -l
     ```
     Ensure WSL, Ubuntu, and Docker Desktop are listed.
-13. **Optionally switch iptables to legacy version**:
+14. **Optionally switch iptables to legacy version**:
     ```sh
     sudo update-alternatives --config iptables
     ```
     Choose option 1 for legacy.
-14. **Install Containerlab**:
+15. **Install Containerlab**:
     ```sh
     curl -sL https://containerlab.dev/setup | sudo bash -s "all"
     ```
@@ -67,12 +68,12 @@
 sudo docker run hello-world
 ```
 
-### Install SRLinux
-1. **Pull the SRLinux images**:
+### Install Nokia SRLinux
+1. **Pull the Nokia SRLinux Containerlab images**:
    ```sh
    sudo docker pull ghcr.io/nokia/srlinux
    ```
-2. **Verify router images in Docker**:
+2. **Verify router images installed in Docker**:
    ```sh
    docker images
    ```
@@ -146,7 +147,6 @@ sudo docker run hello-world
        - endpoints: ["srl1:e1-2", "srl3:e1-1"]
        - endpoints: ["srl3:e1-2", "srl4:e1-1"]
    ```
-Here's the updated section for your configuration tutorial:
 
 ```markdown
 ## Create Configuration Files for Ethernet Links
@@ -326,6 +326,9 @@ A:srl1# show interface ethernet-1/1 all
 A:srl1# show interface ethernet-1/1 brief
 A:srl1# show interface ethernet-1/1 detail
 ```
+#### if the interfaces operational is up you could test ping to each peer. and then you could continue configuring OSPF
+#### if you found lower-layer down interface status, check up on your yaml file configuration. (optionally you could destroy the lab and re-deploy)
+
 
 #### Configure OSPF
 ```sh
@@ -362,7 +365,7 @@ protocols {
 
 ### srl2 Configuration
 
-#### Ensure Configuration Output
+#### Same configuration format as srl1. Ensure Configuration Output
 ```sh
 A:srl2# info
 ```
@@ -379,11 +382,10 @@ area 0.0.0.0 {
     }
 }
 ```
-```
 
-## srl3 Configuration
+### srl3 Configuration
 
-### Creating Configuration for SRL3 with Area 0 on eth1 and Area 1 Stub on eth2
+### Creating Configuration for srl3 with Area 0 on eth1 and Area 1 Stub on eth2
 
 ```bash
 set network-instance default protocols ospf instance default admin-state enable version ospf-v2 instance-id 0 area 0.0.0.0 router-id 3.3.3.3 advertise-router-capability true interface ethernet-1/1.0 admin-state enable interface-type point-to-point
