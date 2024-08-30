@@ -1,391 +1,485 @@
-# Containerlab Multi-Area OSPF Configuration on Nokia SR Linux in Windows WSL Ubuntu 22.04
+```markdown
+# Nokia SRLinux Containerlab Multi-Area OSPF Configuration on Windows 10 WSL2 Ubuntu-22.04
 
-step-by-step instructions for setting up and configuring a multi-area OSPF network using Nokia SR Linux on Containerlab in a Windows WSL Ubuntu 22.04 environment.
+## System Information
+- **Windows version:** 10.0.19045.4780
+- **WSL version:** 2.2.4.0
+- **Ubuntu version:** 22.04.4 LTS
+- **Containerlab version:** 0.57.0
+- **Docker version:** 27.2.0, build 3ab4256
+- **Docker Desktop version:** 4.33.1 (161083)
 
-## Prerequisites
+## Installation Steps
 
-### Install WSL Feature on Windows
-
-1. Open Control Panel.
-2. Enable the **Windows Subsystem for Linux** feature.
-3. Restart your PC.
-
-### Install Ubuntu 22.04 LTS
-
-1. Open PowerShell (run as user) and update WSL:
-    ```powershell
-    wsl --update
-    ```
-
-2. Install Ubuntu 22.04 LTS:
-    ```powershell
-    wsl --install Ubuntu-22.04
-    ```
-3. Set your username and password.
-4. Update and upgrade the system:
-    ```bash
-    sudo apt-get update && sudo apt-get upgrade
-    ```
-
-### Install Docker on Ubuntu 22.04 LTS
-
-Follow the [Docker installation guide for Ubuntu](https://docs.docker.com/engine/install/ubuntu/?ref=crapts.org).
-
-### Check Docker Status
-
-1. Check Docker status:
-    ```bash
+### Install WSL2 on Windows
+1. **Enable Virtual Machine support in BIOS** (SVM for AMD).
+2. **Update Windows** to the latest features and restart.
+3. **Enable Windows features** in Control Panel:
+   - Windows Subsystem for Linux
+   - Virtual Machine Platform
+   - Restart your computer.
+4. **Run PowerShell as Administrator** and check WSL version:
+   ```sh
+   wsl -v
+   ```
+   Ensure it shows WSL2.
+5. **Update WSL**:
+   ```sh
+   wsl --update
+   ```
+6. **Install Ubuntu 22.04**:
+   ```sh
+   wsl --list --online
+   wsl --install -d Ubuntu-22.04
+   ```
+   Enter your username and password.
+7. **Verify WSL app logo** appears in the start menu.
+8. **Update and upgrade Ubuntu**:
+   ```sh
+   sudo apt update && sudo apt full-upgrade -y
+   ```
+9. **Install Docker in WSL** following [Docker's official guide](https://docs.docker.com/engine/install/ubuntu/).
+10. **Check Docker service status**:
+    ```sh
     sudo service docker status
     ```
-2. Test Docker installation:
-    ```bash
-    sudo docker run hello-world
+    Ensure it is 'ON'.
+11. **Install Docker Desktop on Windows** and integrate with WSL2 in settings > resources. Ensure Ubuntu-22.04 is checked.
+12. **Verify Docker integration**:
+    ```sh
+    wsl -l
     ```
-
-### Install Containerlab
-
-1. Install Containerlab:
-    ```bash
+    Ensure WSL, Ubuntu, and Docker Desktop are listed.
+13. **Optionally switch iptables to legacy version**:
+    ```sh
+    sudo update-alternatives --config iptables
+    ```
+    Choose option 1 for legacy.
+14. **Install Containerlab**:
+    ```sh
     curl -sL https://containerlab.dev/setup | sudo bash -s "all"
     ```
-2. Check Containerlab status:
-    ```bash
-    containerlab version
-    ```
 
-### Install Nokia SR Linux
+### Test Docker
+```sh
+sudo docker run hello-world
+```
 
-1. Pull the Nokia SR Linux image:
-    ```bash
-    sudo docker pull ghcr.io/nokia/srlinux
-    ```
-2. Verify the Docker image:
-    ```bash
-    docker images
-    ```
+### Install SRLinux
+1. **Pull the SRLinux images**:
+   ```sh
+   sudo docker pull ghcr.io/nokia/srlinux
+   ```
+2. **Verify router images in Docker**:
+   ```sh
+   docker images
+   ```
 
-## Setting Up the Lab
+## Topology Plan
+```
+=====================================================
+|            > System Interface IP Address IPv4     |
+|             #srl1 > 1.1.1.1/32                    |
+|             #srl2 > 2.2.2.2/32                    |
+|             #srl3 > 3.3.3.3/32                    |
+|             #srl4 > 4.4.4.4/32                    |
+|---------------------------------------------------|
+|            > Link Interface IP Address IPv4       |
+|             #srl1     RID 1.1.1.1                 |
+|                 e1-1                              |
+|                     area: 0.0.0.0                 |
+|                     addr: 10.4.5.1/30             |
+|                 e1-2                              |
+|                     addr: 10.2.4.1/30             |
+|             #srl2     RID 2.2.2.2                 |
+|                 e1-1                              |
+|                     area: 0.0.0.0                 |
+|                     addr: 10.4.5.2/30             |
+|             #srl3     RID 3.3.3.3                 |
+|                 e1-1                              |
+|                     area: 0.0.0.0                 |
+|                     addr: 10.2.4.2/30             |
+|                 e1-2                              |
+|                     area: 0.0.0.1 stub            |
+|                     addr: 10.6.5.1/30             |
+|             #srl4     RID 4.4.4.4                 |
+|                 e1-1                              |
+|                     area: 0.0.0.1 stub            |
+|                     addr: 10.6.5.2/30             |
+=====================================================
+```
 
-### Prepare the Lab Directory
+## Create Topology File
+1. **Create a directory**:
+   ```sh
+   mkdir -p /home/user/srl02-lab
+   ```
+2. **Create the topology file**:
+   ```sh
+   vi /home/user/srl02-lab/srl02-lab.yml
+   ```
+   ```yaml
+   name: srl02-lab
 
-1. Copy the example lab directory:
-    ```bash
-    cp -r clab-nokia-lab clab-nokia-lab2
-    cd clab-nokia-lab2
-    ```
+   topology:
+     nodes:
+       srl1:
+         kind: nokia_srlinux
+         image: ghcr.io/nokia/srlinux
+         startup-config: srl1.cfg
+       srl2:
+         kind: nokia_srlinux
+         image: ghcr.io/nokia/srlinux
+         startup-config: srl2.cfg
+       srl3:
+         kind: nokia_srlinux
+         image: ghcr.io/nokia/srlinux
+         startup-config: srl3.cfg
+       srl4:
+         kind: nokia_srlinux
+         image: ghcr.io/nokia/srlinux
+         startup-config: srl4.cfg
+     links:
+       - endpoints: ["srl1:e1-1", "srl2:e1-1"]
+       - endpoints: ["srl1:e1-2", "srl3:e1-1"]
+       - endpoints: ["srl3:e1-2", "srl4:e1-1"]
+   ```
+Here's the updated section for your configuration tutorial:
 
-### Create the Topology File
+```markdown
+## Create Configuration Files for Ethernet Links
 
-1. Create the topology file `nokia-lab.clab.yml`:
-    ```bash
-    vi nokia-lab.clab.yml
-    ```
+### srl1.cfg
+```sh
+vi /home/user/srl02-lab/srl1.cfg
+```
+```sh
+set / interface ethernet-1/1 admin-state enable
+set / interface ethernet-1/1 subinterface 0
+set / interface ethernet-1/1 subinterface 0 ipv4
+set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable
+set / interface ethernet-1/1 subinterface 0 ipv4 address 10.4.5.1/30
 
-2. Add the following content:
-    ```yaml
-    name: nokia-lab
-    topology:
-      nodes:
-        srl1:
-          kind: srl
-          image: ghcr.io/nokia/srlinux
-        srl2:
-          kind: srl
-          image: ghcr.io/nokia/srlinux
-        srl3:
-          kind: srl
-          image: ghcr.io/nokia/srlinux
-      links:
-        - endpoints: ["srl1:e1-1", "srl2:e1-1"]
-        - endpoints: ["srl1:e1-2", "srl3:e1-1"]
-    ```
+set / network-instance default
+set / network-instance default interface ethernet-1/1.0
 
-3. Verify the topology file:
-    ```bash
-    cat nokia-lab.clab.yml
-    ```
+set / interface ethernet-1/2 admin-state enable
+set / interface ethernet-1/2 subinterface 0
+set / interface ethernet-1/2 subinterface 0 ipv4
+set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable
+set / interface ethernet-1/2 subinterface 0 ipv4 address 10.2.4.1/30
 
-### Deploy the Topology
+set / network-instance default
+set / network-instance default interface ethernet-1/2.0
+```
 
-1. Deploy the topology:
-    ```bash
-    sudo containerlab deploy --topo nokia-lab.clab.yml
-    ```
+### srl2.cfg
+```sh
+vi /home/user/srl02-lab/srl2.cfg
+```
+```sh
+set / interface ethernet-1/1 admin-state enable
+set / interface ethernet-1/1 subinterface 0
+set / interface ethernet-1/1 subinterface 0 ipv4
+set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable
+set / interface ethernet-1/1 subinterface 0 ipv4 address 10.4.5.2/30
 
-2. Check Docker containers:
-    ```bash
-    docker ps -a
-    ```
+set / network-instance default
+set / network-instance default interface ethernet-1/1.0
+```
 
-3. Generate the topology graph:
-    ```bash
-    sudo containerlab graph --topo nokia-lab.clab.yml
-    ```
+### srl3.cfg
+```sh
+vi /home/user/srl02-lab/srl3.cfg
+```
+```sh
+set / interface ethernet-1/1 admin-state enable
+set / interface ethernet-1/1 subinterface 0
+set / interface ethernet-1/1 subinterface 0 ipv4
+set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable
+set / interface ethernet-1/1 subinterface 0 ipv4 address 10.2.4.2/30
 
-4. Access the topology graph:
-    Open a web browser and go to `http://<eth0-IP>:50080` (replace `<eth0-IP>` with the IP address of `eth0`).
+set / network-instance default
+set / network-instance default interface ethernet-1/1.0
 
-## Configuration Topology: 3 Routers; 2 Areas: Normal and Stub; Broadcast
+set / interface ethernet-1/2 admin-state enable
+set / interface ethernet-1/2 subinterface 0
+set / interface ethernet-1/2 subinterface 0 ipv4
+set / interface ethernet-1/2 subinterface 0 ipv4 admin-state enable
+set / interface ethernet-1/2 subinterface 0 ipv4 address 10.6.5.1/30
 
-- **R01** as ABR between **R02** in normal area and **R03** in stub.
+set / network-instance default
+set / network-instance default interface ethernet-1/2.0
+```
 
-### System Interface IP Address (IPv4)
+### srl4.cfg
+```sh
+vi /home/user/srl02-lab/srl4.cfg
+```
+```sh
+set / interface ethernet-1/1 admin-state enable
+set / interface ethernet-1/1 subinterface 0
+set / interface ethernet-1/1 subinterface 0 ipv4
+set / interface ethernet-1/1 subinterface 0 ipv4 admin-state enable
+set / interface ethernet-1/1 subinterface 0 ipv4 address 10.6.5.2/30
 
-- R01: 1.1.1.1/32
-- R02: 2.2.2.2/32
-- R03: 3.3.3.3/32
+set / network-instance default
+set / network-instance default interface ethernet-1/1.0
+```
 
-### Link Interface IP Address (IPv4)
+## Deploy the Topology
+```sh
+sudo containerlab deploy -t /home/user/srl02-lab/srl02-lab.yml
+```
+```
++---+---------------------+--------------+-----------------------+---------------+---------+----------------+----------------------+
+| # |        Name         | Container ID |         Image         |     Kind      |  State  |  IPv4 Address  |     IPv6 Address     |
++---+---------------------+--------------+-----------------------+---------------+---------+----------------+----------------------+
+| 1 | clab-srl02-lab-srl1 | 483460df06ff | ghcr.io/nokia/srlinux | nokia_srlinux | running | 172.20.20.5/24 | 2001:172:20:20::5/64 |
+| 2 | clab-srl02-lab-srl2 | 2db6a02b4ea6 | ghcr.io/nokia/srlinux | nokia_srlinux | running | 172.20.20.3/24 | 2001:172:20:20::3/64 |
+| 3 | clab-srl02-lab-srl3 | c1925aaf2aaa | ghcr.io/nokia/srlinux | nokia_srlinux | running | 172.20.20.2/24 | 2001:172:20:20::2/64 |
+| 4 | clab-srl02-lab-srl4 | 92c176ef43ec | ghcr.io/nokia/srlinux | nokia_srlinux | running | 172.20.20.4/24 | 2001:172:20:20::4/64 |
++---+---------------------+--------------+-----------------------+---------------+---------+----------------+----------------------+
+```
 
-- **R01**
-  - e1-1: to_R02 (10.4.5.1/30)
-  - e1-2: to_R03 (10.2.4.1/30)
+## Check SRLinux Router Images Status on Docker
+```sh
+docker ps -a
+```
 
-- **R02**
-  - e1-1: to_R01 (10.4.5.2/30)
+## Generate Topology Graph
+```sh
+sudo containerlab graph --topo /home/user/srl02-lab/srl02-lab.yml
+```
+Access the graph in your browser at:
+```
+http://0.0.0.0:50080
+```
+The address of containerlab is `eth0` on Ubuntu. To find it:
+```sh
+ifconfig
+```
+Look for `eth0`.
 
-- **R03**
-  - e1-1: to_R01 (10.2.4.2/30)
+## SSH Remote Access to the Router
+```sh
+ssh admin@172.20.20.0
+```
+or
+```sh
+containerlab -t exec clab-srl02-lab-srl1 sr_cli
+```
+The default password is `NokiaSrl1!`.
+```
 
-### OSPF Area ID
 
-- **Area 0.0.0.0**
-  - Link R01 to R02
-  - Type: Normal
 
-- **Area 0.0.0.1**
-  - Link R01 to R03
-  - Type: Stub
+```markdown
+## Configure SRLinux Routers
 
-## Configuration Steps
+### srl1 Configuration
 
-### Login to SRL1
+#### Show Version
+```sh
+A:srl1# show version
+```
+```
+----------------------------------------------------------------------------------------------
+Hostname             : srl1
+Chassis Type         : 7220 IXR-D2L
+Part Number          : Sim Part No.
+Serial Number        : Sim Serial No.
+System HW MAC Address: 1A:94:00:FF:00:00
+OS                   : SR Linux
+Software Version     : v24.7.1
+Build Number         : 330-g38f237abfe
+Architecture         : x86_64
+Last Booted          : 2024-08-30T06:16:14.005Z
+Total Memory         : 7906339 kB
+Free Memory          : 495281 kB
+-----------------------------------------------------------------------------------------------
+```
 
-1. SSH into SRL1:
-    ```bash
-    ssh admin@clab-nokia-lab-srl1
-    ```
-   Password: `NokiaSrl1!`
+#### Assign Interface Ethernet and System to Network-Instance
+```sh
+A:srl1# enter candidate
+A:srl1# set interface ethernet-1/1 admin-state enable subinterface 0 admin-state enable ipv4 address 10.4.5.1/30
+A:srl1# set interface ethernet-1/2 admin-state enable subinterface 0 admin-state enable ipv4 address 10.2.4.1/30
+A:srl1# set admin-state enable interface system0.0
+A:srl1# info
+```
+```
+admin-state enable
+interface ethernet-1/1.0 {
+}
+interface ethernet-1/2.0 {
+}
+interface system0.0 {
+}
+```
 
-2. Alternatively, login using Docker:
-    ```bash
-    docker exec -it clab-nokia-lab-srl1 sr_cli
-    ```
+#### Check Interface Operational Status
+```sh
+A:srl1# show interface ethernet-1/1 all
+A:srl1# show interface ethernet-1/1 brief
+A:srl1# show interface ethernet-1/1 detail
+```
 
-3. Ensure ports `mgmt0`, `ethernet`, and `system` are Admin UP and Oper UP.
+#### Configure OSPF
+```sh
+A:srl1# set / network-instance default protocols ospf instance default version ospf-v2 instance-id 0 admin-state enable router-id 1.1.1.1 area 0.0.0.0 advertise-router-capability true interface ethernet-1/1.0 admin-state enable interface-type point-to-point
+A:srl1# set / network-instance default protocols ospf instance default area 0.0.0.0 advertise-router-capability true interface ethernet-1/2.0 admin-state enable interface-type point-to-point
+A:srl1# info
+```
+```
+interface ethernet-1/1.0 {
+}
+interface ethernet-1/2.0 {
+}
+protocols {
+    ospf {
+        instance default {
+            admin-state enable
+            version ospf-v2
+            address-family ipv4-unicast
+            instance-id 0
+            router-id 1.1.1.1
+            area 0.0.0.0 {
+                advertise-router-capability true
+                interface ethernet-1/1.0 {
+                    admin-state enable
+                }
+                interface ethernet-1/2.0 {
+                    admin-state enable
+                }
+            }
+        }
+    }
+}
+```
 
-### Configure R01
+### srl2 Configuration
 
-1. Enter configuration candidate mode:
-    ```plaintext
-    enter candidate
-    ```
+#### Ensure Configuration Output
+```sh
+A:srl2# info
+```
+```
+admin-state enable
+version ospf-v2
+instance-id 0
+router-id 2.2.2.2
+area 0.0.0.0 {
+    advertise-router-capability true
+    interface ethernet-1/1.0 {
+        admin-state enable
+        interface-type point-to-point
+    }
+}
+```
+```
 
-2. Set hostname:
-    ```plaintext
-    set system name host-name R01
-    commit stay
-    save
-    ```
+## srl3 Configuration
 
-3. Configure system interface:
-    ```plaintext
-    set / interface system0
-        / interface system0 description "System Loopback"
-                            admin-state enable
-                            subinterface 0 
-                            ipv4 address 1.1.1.1/32
-    info
-    ```
+### Creating Configuration for SRL3 with Area 0 on eth1 and Area 1 Stub on eth2
 
-4. Configure interface 1/1 for R02:
-    ```plaintext
-    / interface ethernet-1/1
-                            description "to_R02"
-                            admin-state enable
-                            mtu 1500
-                            subinterface 1
-                            admin-state enable
-                            ipv4 address 10.4.5.1/30
-    info
-    ```
+```bash
+set network-instance default protocols ospf instance default admin-state enable version ospf-v2 instance-id 0 area 0.0.0.0 router-id 3.3.3.3 advertise-router-capability true interface ethernet-1/1.0 admin-state enable interface-type point-to-point
 
-5. Configure interface 1/2 for R03:
-    ```plaintext
-    / interface ethernet-1/2
-                            description "to_R03"
-                            admin-state enable
-                            mtu 1500
-                            subinterface 1
-                            admin-state enable
-                            ipv4 address 10.2.4.1/30
-    info
-    ```
+set network-instance default protocols ospf instance default area 0.0.0.1 advertise-router-capability true interface ethernet-1/2.0 admin-state enable interface-type point-to-point
 
-6. Verify interfaces:
-    ```plaintext
-    show interface all
-    show interface brief
-    show interface ethernet-1/1 detail
-    ```
+A:srl3# instance default area 0.0.0.1
+A:srl3# set stub
+```
 
-7. Set OSPF on interface 1/1:
-    ```plaintext
-    set / network-instance default protocols ospf instance link_to_R02
-        / network-instance default protocols ospf admin-state enable
-                                                  router-id 1.1.1.1
-                                                  area 0.0.0.0
-                                                  interface ethernet-1/1
-                                                  interface-type broadcast
-                                                  admin-state enable
-    ```
+### Verification
 
-8. Set OSPF on interface 1/2:
-    ```plaintext
-    set / network-instance default protocols ospf instance link_to_R03
-        / network-instance default protocols ospf admin-state enable
-                                                  router-id 1.1.1.1
-                                                  area 0.0.0.1
-                                                  interface ethernet-1/2
-                                                  interface-type broadcast
-                                                  admin-state enable
-    ```
+```bash
+--{ running }--[ network-instance default protocols ]--
+A:srl3# info
+    ospf {
+        instance default {
+            admin-state enable
+            version ospf-v2
+            instance-id 0
+            router-id 3.3.3.3
+            area 0.0.0.0 {
+                advertise-router-capability true
+                interface ethernet-1/1.0 {
+                    admin-state enable
+                    interface-type point-to-point
+                }
+            }
+            area 0.0.0.1 {
+                advertise-router-capability true
+                stub {
+                }
+                interface ethernet-1/2.0 {
+                    admin-state enable
+                    interface-type point-to-point
+                }
+            }
+        }
+    }
+```
 
-9. Verify configuration:
-    ```plaintext
-    validate
-    commit stay
-    save
-    ```
+## srl4 Configuration
 
-### Configure R02
+### Setting srl4 with Stub area
 
-1. Enter configuration candidate mode:
-    ```plaintext
-    enter candidate
-    ```
+```bash
+A:srl4# set protocols ospf instance default admin-state enable version ospf-v2 instance-id 0 router-id 4.4.4.4 area 0.0.0.1 advertise-router-capability true interface ethernet-1/1.0 admin-state enable interface-type point-to-point
 
-2. Set hostname:
-    ```plaintext
-    set system name host-name R02
-    ```
+A:srl4# protocols ospf instance default area 0.0.0.1
+A:srl4# set stub
+```
 
-3. Configure system interface:
-    ```plaintext
-    set / interface system0
-        / interface system0 description "System Loopback"
-                            admin-state enable
-                            subinterface 0 
-                            ipv4 address 2.2.2.2/32
-    info
-    ```
+### Verification
 
-4. Configure interface 1/1 for R01:
-    ```plaintext
-    / interface ethernet-1/1
-                            description "to_R01"
-                            admin-state enable
-                            mtu 1500
-                            subinterface 1
-                            admin-state enable
-                            ipv4 address 10.4.5.2/30
-    show interface system0.0
-    show interface ethernet-1/1.1
-    ```
+```bash
+--{ + candidate shared default }--[ network-instance default protocols ]--
+A:srl4# info
+    ospf {
+        instance default {
+            admin-state enable
+            version ospf-v2
+            instance-id 0
+            router-id 4.4.4.4
+            area 0.0.0.1 {
+                advertise-router-capability true
+                stub {
+                }
+                interface ethernet-1/1.0 {
+                    admin-state enable
+                    interface-type point-to-point
+                }
+            }
+        }
+    }
+```
 
-5. Set OSPF on interface 1/1:
-    ```plaintext
-    set / network-instance default protocols ospf instance link_to_R01
-        / network-instance default protocols ospf admin-state enable
-                                                  router-id 2.2.2.2
-                                                  area 0.0.0.0
-                                                  interface ethernet-1/1
-                                                  interface-type broadcast
-                                                  admin-state enable
-    ```
+## Test Commands
 
-6. Verify configuration:
-    ```plaintext
-    validate
-    commit stay
-    save
-    ```
+```bash
+ping
+show network-instance default protocols ospf status
+show network-instance default protocols ospf database
+show network-instance default protocols ospf neighbor detail
+show network-instance default route-table all
+show network-instance default protocols ospf area 0.0.0.0 detail
+show network-instance default protocols ospf interface detail
+```
 
-### Configure R03
+## Save and Manage the Lab
 
-1. Enter configuration candidate mode:
-    ```plaintext
-    enter candidate
-    ```
-
-2. Set hostname:
-    ```plaintext
-    set system name host-name R03
-    ```
-
-3. Configure system interface:
-    ```plaintext
-    set / interface system0
-        / interface system0 description "System Loopback"
-                            admin-state enable
-                            subinterface 0 
-                            ipv4 address 3.3.3.3/32
-    info
-    ```
-
-4. Configure interface 1/1 for R01:
-    ```plaintext
-    / interface ethernet-1/1
-                            description "to_R01"
-                            admin-state enable
-                            mtu 1500
-                            subinterface 1
-                            admin-state enable
-                            ipv4 address 10.2.4.2/30
-    show interface all
-    ```
-
-5. Set OSPF on interface 1/1:
-    ```plaintext
-    set / network-instance default protocols ospf instance link_to_R01
-        / network-instance default protocols ospf admin-state enable
-                                                  router-id 3.3.3.3
-                                                  area 0.0.0.1
-                                                  interface ethernet-1/1
-                                                  interface-type broadcast
-                                                  admin-state enable
-    ```
-
-6. Verify configuration:
-    ```plaintext
-    validate
-    commit stay
-    save
-    ```
-
-## Verification
-
-1. Show OSPF configuration:
-    ```plaintext
-    show network-instance default protocols ospf
-    ```
-
-2. Verify connectivity:
-    ```plaintext
-    ping <destination-IP>
-    ```
-
-3. Show OSPF interfaces:
-    ```plaintext
-    show network-instance default protocols ospf interface
-    ```
-
-4. Show OSPF neighbors:
-    ```plaintext
-    show network-instance default protocols ospf neighbor
-    ```
-
-5. Show routes:
-    ```plaintext
-    show network-instance default routes
-    ```
+```bash
+containerlab save -t srl02-lab.yml
+# Close the lab with 'CTRL + D'
+# Start the lab by starting Docker container
+docker ps -a
+docker container start CONTAINER_ID
+# If you find trouble with container status, destroy
+containerlab destroy -t srl02-lab.yml
+# You can start over by re-deploying. The config is saved inside the file in the directory
+```
+```
