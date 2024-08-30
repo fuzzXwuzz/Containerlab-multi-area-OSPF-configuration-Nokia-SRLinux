@@ -1,6 +1,7 @@
-```markdown
+
 # Nokia SRLinux Containerlab Multi-Area OSPF Configuration on Windows 10 WSL2 Ubuntu-22.04
 
+```markdown
 ## System Information
 - **Windows version:** 10.0.19045.4780
 - **WSL version:** 2.2.4.0
