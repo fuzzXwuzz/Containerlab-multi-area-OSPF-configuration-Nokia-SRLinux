@@ -9,6 +9,7 @@
 - **Containerlab version:** 0.57.0
 - **Docker version:** 27.2.0, build 3ab4256
 - **Docker Desktop version:** 4.33.1 (161083)
+```
 
 ## Installation Steps
 
@@ -148,8 +149,8 @@ sudo docker run hello-world
        - endpoints: ["srl3:e1-2", "srl4:e1-1"]
    ```
 
-```markdown
-## Create Configuration Files for Ethernet Links
+
+## Create interface Configuration Files for Router Links
 
 ### srl1.cfg
 ```sh
@@ -233,6 +234,7 @@ set / network-instance default interface ethernet-1/1.0
 ```sh
 sudo containerlab deploy -t /home/user/srl02-lab/srl02-lab.yml
 ```
+output shown as below:
 ```
 +---+---------------------+--------------+-----------------------+---------------+---------+----------------+----------------------+
 | # |        Name         | Container ID |         Image         |     Kind      |  State  |  IPv4 Address  |     IPv6 Address     |
@@ -272,16 +274,13 @@ or
 containerlab -t exec clab-srl02-lab-srl1 sr_cli
 ```
 The default password is `NokiaSrl1!`.
-```
 
 
-
-```markdown
 ## Configure SRLinux Routers
 
 ### srl1 Configuration
 
-#### Show Version
+#### Show Nokia SRLinux router Version
 ```sh
 A:srl1# show version
 ```
