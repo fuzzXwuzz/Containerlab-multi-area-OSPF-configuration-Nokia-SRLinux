@@ -45,6 +45,11 @@
     ```sh
     sudo service docker status
     ```
+    Test Docker
+    ```sh
+    sudo docker run hello-world
+    ```
+
     Ensure it is 'ON'.
 12. **Install Docker Desktop on Windows** and integrate with WSL2 in settings > resources. Ensure Ubuntu-22.04 is checked.
 13. **Verify Docker integration**:
@@ -61,11 +66,6 @@
     ```sh
     curl -sL https://containerlab.dev/setup | sudo bash -s "all"
     ```
-
-### Test Docker
-```sh
-sudo docker run hello-world
-```
 
 ### Install Nokia SRLinux
 1. **Pull the Nokia SRLinux Containerlab images**:
