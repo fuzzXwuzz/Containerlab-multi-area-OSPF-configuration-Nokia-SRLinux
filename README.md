@@ -28,7 +28,7 @@
    ```sh
    wsl --update
    ```
-6. **Install Ubuntu 22.04**:
+6. **Install Ubuntu 22.04** on PowerShell:
    ```sh
    wsl --list --online
    wsl --install -d Ubuntu-22.04
@@ -52,16 +52,19 @@
 
     Ensure it is 'ON'.
 12. **Install Docker Desktop on Windows** and integrate with WSL2 in settings > resources. Ensure Ubuntu-22.04 is checked.
-13. **Verify Docker integration**:
+
+13. **Verify Docker integration** on PowerShell:
     ```sh
     wsl -l
     ```
     Ensure WSL, Ubuntu, and Docker Desktop are listed.
+
 14. **Optionally switch iptables to legacy version**:
     ```sh
     sudo update-alternatives --config iptables
     ```
     Choose option 1 for legacy.
+
 15. **Install Containerlab**:
     ```sh
     curl -sL https://containerlab.dev/setup | sudo bash -s "all"
