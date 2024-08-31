@@ -69,6 +69,7 @@
     ```sh
     curl -sL https://containerlab.dev/setup | sudo bash -s "all"
     ```
+![containerlab](https://github.com/user-attachments/assets/34d43b1e-ce6b-43f6-adc3-a5fdac5d1821)
 
 ### Install Nokia SRLinux
 1. **Pull the Nokia SRLinux Containerlab images**:
@@ -246,7 +247,7 @@ output shown as below:
 | 4 | clab-srl02-lab-srl4 | 92c176ef43ec | ghcr.io/nokia/srlinux | nokia_srlinux | running | 172.20.20.4/24 | 2001:172:20:20::4/64 |
 +---+---------------------+--------------+-----------------------+---------------+---------+----------------+----------------------+
 ```
-
+![graph topo](https://github.com/user-attachments/assets/0d743c0d-c30e-4efa-b700-9990a18f6496)
 
 ## Check SRLinux Router Images Status on Docker
 ```sh
@@ -332,7 +333,7 @@ A:srl1# show interface ethernet-1/1 detail
 
 
 #### Configure OSPF
-### srl1 Configuration
+
 ```sh
 A:srl1# set / network-instance default protocols ospf instance default version ospf-v2 instance-id 0 admin-state enable router-id 1.1.1.1 area 0.0.0.0 advertise-router-capability true interface ethernet-1/1.0 admin-state enable interface-type point-to-point
 A:srl1# set / network-instance default protocols ospf instance default area 0.0.0.0 advertise-router-capability true interface ethernet-1/2.0 admin-state enable interface-type point-to-point
@@ -475,17 +476,29 @@ show network-instance default route-table all
 show network-instance default protocols ospf area 0.0.0.0 detail
 show network-instance default protocols ospf interface detail
 ```
+#### ping srl1 to srl4 result
+![ping srl1 to srl4](https://github.com/user-attachments/assets/475a01fc-fbef-48bd-b1e2-4bff92d6f629)
 
-## Save and Manage the Lab
+#### ospf database srl1
+![ospf database srl1](https://github.com/user-attachments/assets/dccaf430-aa46-49a4-a743-a7f006048960)
+
+#### srl4 stub lsa database
+![srl4 stub lsa database](https://github.com/user-attachments/assets/1fa9184d-73dd-4df2-968c-635d0b98747f)
+
+
+## Saving and Manage the Lab
 
 ```bash
 containerlab save -t srl02-lab.yml
+
 # Close the lab with 'CTRL + D'
-# Start the lab by starting Docker container
+
+# re-Start the lab by starting Docker container
 docker ps -a
 docker container start CONTAINER_ID
+
 # If you find trouble with container status, destroy
 containerlab destroy -t srl02-lab.yml
+
 # You can start over by re-deploying. The config is saved inside the file in the directory
-```
 ```
