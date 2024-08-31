@@ -485,6 +485,8 @@ show network-instance default protocols ospf interface detail
 #### srl4 stub lsa database
 ![srl4 stub lsa database](https://github.com/user-attachments/assets/1fa9184d-73dd-4df2-968c-635d0b98747f)
 
+#### srl1 route-table
+![srl1 route-table](https://github.com/user-attachments/assets/0ef55a7a-2e39-4c9c-ab42-ed6ac2078170)
 
 ## Saving and Manage the Lab
 
