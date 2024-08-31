@@ -332,6 +332,7 @@ A:srl1# show interface ethernet-1/1 detail
 
 
 #### Configure OSPF
+### srl1 Configuration
 ```sh
 A:srl1# set / network-instance default protocols ospf instance default version ospf-v2 instance-id 0 admin-state enable router-id 1.1.1.1 area 0.0.0.0 advertise-router-capability true interface ethernet-1/1.0 admin-state enable interface-type point-to-point
 A:srl1# set / network-instance default protocols ospf instance default area 0.0.0.0 advertise-router-capability true interface ethernet-1/2.0 admin-state enable interface-type point-to-point
