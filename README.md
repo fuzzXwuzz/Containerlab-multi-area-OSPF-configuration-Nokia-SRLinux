@@ -3,15 +3,13 @@
 
 ```markdown
 ## System Information
-- **Windows version:** 10.0.19045.4780
-- **WSL version:** 2.2.4.0
-- **Ubuntu version:** 22.04.4 LTS
-- **Containerlab version:** 0.57.0
-- **Docker version:** 27.2.0, build 3ab4256
-- **Docker Desktop version:** 4.33.1 (161083)
+- Windows version: 10.0.19045.4780
+- WSL version: 2.2.4.0
+- Ubuntu version: 22.04.4 LTS
+- Containerlab version: 0.57.0
+- Docker version: 27.2.0, build 3ab4256
+- Docker Desktop version: 4.33.1 (161083)
 ```
-
-## Installation Steps
 
 ### Install WSL2 on Windows
 1. **Enable Virtual Machine support in BIOS** (SVM for AMD).
